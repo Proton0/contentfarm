@@ -2,29 +2,30 @@
 # Sigma Trollface Content Farm Maker
 A simple python script which makes a super sigma trollface edit that you can use to content farm
 
-## Changelogs (v1 -> v1.1)
+## Changelogs (v1.1 -> v1.2)
+- Added a 'fade in' effect
+- increased batch size in default config
+- Moved some functions to `misc.py` and `effects.py` so its not spaghetti code (it still is kind of)
+- Allow the video and timestamp to be set in `config.json` for TTB's application
+- Moves assets to `resources` folder
+- Support for multiple audio files `resources/audio.json`
+- Fixed multiprocessing
+- Fixed 4:3 ratio
 
-- Fixed audio not working
-- Added face detection for Trollface
-- Trollface is now in the middle of the video (thx ttb for suggestion)
-- Added glitches
-- Added the ability to configure the tool using `config.json`
-
-Multiprocessing is still broken and you may need to change the codecs for it to work on your device
-
+**Multiprocessing is currently broken and WILL not work**
 
 ## Run Locally
 
 Clone the project
 
 ```bash
-  git clone https://github.com/proton0/sigma-contentfarm
+  git clone https://github.com/proton0/contentfarm
 ```
 
 Go to the project directory
 
 ```bash
-  cd sigma-contentfarm
+  cd contentfarm
 ```
 
 Install dependencies
@@ -100,4 +101,4 @@ Default configuration
 
 `threads` is movie.py exporting (`use_multiprocessing` is for opencv processing)
 
-When setting `trollface_x` or `trollface_y` to any value. It will ignore any other trolface related configs
+When setting `trollface_x` or `trollface_y` to any value. It will ignore any other trollface related configs

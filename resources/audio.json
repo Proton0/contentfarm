@@ -1,0 +1,17 @@
+[
+  {
+    "audio_file": "resources/audios/audio0.wav",
+    "start_frame": 16,
+    "freeze_frame_duration": 4
+  },
+  {
+    "audio_file": "resources/audios/audio1.wav",
+    "start_frame": 10,
+    "freeze_frame_duration": 9
+  },
+  {
+    "audio_file": "resources/audios/audio2.wav",
+    "start_frame": 8,
+    "freeze_frame_duration": 12
+  }
+]
