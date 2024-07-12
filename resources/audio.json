@@ -13,5 +13,15 @@
     "audio_file": "resources/audios/audio2.wav",
     "start_frame": 8,
     "freeze_frame_duration": 12
+  },
+  {
+    "audio_file": "resources/audios/audio3.wav",
+    "start_frame": 10 ,
+    "freeze_frame_duration": 5
+  },
+  {
+    "audio_file": "resources/audios/audio4.wav",
+    "start_frame": 7,
+    "freeze_frame_duration": 10
   }
 ]

@@ -17,7 +17,7 @@
   "start_frame": 16,
   "threads": 8,
   "trollface_size": 0.3,
-  "use_multiprocessing": false,
+  "use_multiprocessing": true,
   "freeze_video": true,
   "face": 0,
   "use_top_left_for_trollface": true,
@@ -35,6 +35,8 @@
   "draw_line_chance": 4,
   "line_color": [0,0,0],
   "allow_pixelation": true,
+  "motion_blur_size_max": 5,
+  "motion_blur_size_min": 1,
   "pixelation_chance": 4,
   "allow_color_distortion": true,
   "color_distortion_chance": 2,
@@ -51,5 +53,5 @@
   "fadein_duration": 3,
   "video": "mr.mp4",
   "timestamp": 509,
-  "pixelation_intensity": 2,
+  "pixelation_intensity": 2
 }

@@ -1,5 +1,4 @@
 import random
-
 import cv2
 import numpy as np
 import os
@@ -9,6 +8,7 @@ from moviepy.video.fx import fadein
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_audioclips
 import multiprocessing
 import json
+import effects
 import misc
 
 with open("config.json", "r") as f:
@@ -23,9 +23,8 @@ audio = config
 
 if config["pick_random_audio"]:
     try:
-        f = open(config["random_audio_json"], "r")
-        audio_files = json.load(f)
-        f.close()
+        with open(config["random_audio_json"], "r") as f:
+            audio_files = json.load(f)
         while True:
             audio = random.choice(audio_files)
             logging.debug(f"Selected random audio: {audio['audio_file']}")
@@ -41,10 +40,12 @@ else:
 trollface = misc.get_random_trollface()
 freezeframe = None
 
-import effects
+
+def process_frame(args):
+    frame, intensity, trollface = args
+    return effects.apply_effects((frame, intensity, trollface))
 
 
-# Function to process frames in parallel
 def process_frames(frames, intensity):
     global trollface
 
@@ -56,7 +57,7 @@ def process_frames(frames, intensity):
                 processed_frames = list(
                     tqdm(
                         pool.imap_unordered(
-                            effects.apply_effects,
+                            process_frame,
                             [(frame, intensity, trollface) for frame in frames],
                         ),
                         total=len(frames),
@@ -69,7 +70,7 @@ def process_frames(frames, intensity):
                 "Multiprocessing is disabled. Video processing will be VERY VERY slow."
             )
             processed_frames = [
-                effects.apply_effects((frame, intensity, trollface))
+                process_frame((frame, intensity, trollface))
                 for frame in tqdm(frames, desc="Applying effects")
             ]
 
@@ -83,7 +84,6 @@ def process_frames(frames, intensity):
 
 
 if __name__ == "__main__":
-    # Ask the user
     if config["video"] != "":
         video_path = config["video"]
         logging.info("Using video from configuration file")
@@ -100,13 +100,11 @@ if __name__ == "__main__":
             )
         )
 
-    # Load the video
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     logging.debug(f"Video loaded: {video_path}, FPS: {fps}, Frame count: {frame_count}")
 
-    # Calculate the frame number
     timestamp_frame = int(timestamp * fps)
     start_frame = max(0, timestamp_frame - int(audio["start_frame"] * fps))
     end_frame = timestamp_frame
@@ -114,13 +112,11 @@ if __name__ == "__main__":
         f"Timestamp frame: {timestamp_frame}, Start frame: {start_frame}, End frame: {end_frame}"
     )
 
-    # Prepare for writing the video
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(
         "temp_video.mp4", fourcc, fps, (int(cap.get(3)), int(cap.get(4)))
     )
 
-    # Read and write the frames for the last 16 seconds with tqdm progress bar
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     for _ in tqdm(
         range(start_frame, end_frame), desc="Processing video frames", unit="frames"
@@ -132,20 +128,15 @@ if __name__ == "__main__":
         out.write(frame)
     logging.debug("Initial video frames processed")
 
-    # Freeze-frame for 4 seconds with dynamic effects
     freeze_frame_duration = audio["freeze_frame_duration"]
     freeze_frame_count = int(freeze_frame_duration * fps)
 
-    # Initialize frames list for freeze frames
     freeze_frames = []
 
-    # Read and process freeze frames in batches for parallel processing
     batch_size = config["batch_size"]
     frames_batch = []
 
-    cap.set(
-        cv2.CAP_PROP_POS_FRAMES, end_frame
-    )  # Set to the end frame for freeze frames
+    cap.set(cv2.CAP_PROP_POS_FRAMES, end_frame)
 
     for _ in tqdm(range(freeze_frame_count), desc="Generating freeze-frame"):
         if config["freeze_video"] and freezeframe is not None:
@@ -159,7 +150,6 @@ if __name__ == "__main__":
             freezeframe = frame
         frames_batch.append(frame)
 
-        # Process frames batch
         if len(frames_batch) >= batch_size:
             logging.debug(f"Processing batch of {batch_size} frames")
             freeze_frames.extend(
@@ -167,34 +157,29 @@ if __name__ == "__main__":
             )
             frames_batch = []
 
-    # Process any remaining frames in the batch
     if frames_batch:
         logging.debug(f"Processing remaining batch of {len(frames_batch)} frames")
         freeze_frames.extend(process_frames(frames_batch, config["noise_intensity"]))
 
-    # Write freeze frames to output video
     for frame in tqdm(freeze_frames, desc="Writing freeze-frame"):
         out.write(frame)
     logging.debug("Freeze frames written to output video")
     logging.info(f"Frames: {len(freeze_frames)}")
-    # Release everything
+
     cap.release()
     out.release()
     cv2.destroyAllWindows()
     logging.debug("Resources released")
 
-    # Add audio using moviepy
     video_clip = VideoFileClip("temp_video.mp4")
     if config["mute_original_audio"]:
         video_clip = video_clip.without_audio()
 
-    # Add fade-in effect
     logging.debug("Applying fade in")
     video_clip = video_clip.fx(fadein.fadein, config["fadein_duration"])
 
     audio_clip = AudioFileClip(audio["audio_file"])
 
-    # Check if the audio is shorter than the video and loop/pad if necessary
     if audio_clip.duration < video_clip.duration:
         loops = int(np.ceil(video_clip.duration / audio_clip.duration))
         audio_clip = concatenate_audioclips([audio_clip] * loops).set_duration(
@@ -202,7 +187,6 @@ if __name__ == "__main__":
         )
         logging.warning(f"Audio will be looped {loops} times")
 
-    # Combine video and audio
     final_clip = video_clip.set_audio(audio_clip)
     final_clip.write_videofile(
         config["output_file"],
