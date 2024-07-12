@@ -1,13 +1,14 @@
-import json
+import json5 as json
 import random
 import logging
 import cv2
+import os
 import numpy as np
 
-with open("config.json", "r") as f:
+with open("config.jsonc", "r") as f:
     config = json.load(f)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=config["debug_level"],
     format="%(asctime)s [%(levelname)s] [%(funcName)s] [%(processName)s] %(message)s",
 )
 
@@ -107,6 +108,27 @@ def glitch(frame):
             glitch(frame)
         return frame
 
+def check_if_opencv_compatible(c):
+    try:
+        if os.path.isfile("../../_opencv_version"):
+            with open("../../_opencv_version", "r") as f:
+                opencv_version = f.read()
+                if int(opencv_version) >= 5:
+                    return False # Too new
+                else:
+                    with open("../../_opencv_version", "w") as z:
+                        z.write(str(int(opencv_version) + 1))
+                        z.close()
+                        return True  # good version
+                    return True # good
+        else:
+            with open("../../_opencv_version", "w") as f:
+                f.write(str(0))
+                f.close()
+                return True # good version
+    except Exception as e:
+        return False # Opencv not compatible (too old for the file to be created)
+    return False
 
 def overlay_trollface(a):
     frame, trollface = a
@@ -219,5 +241,4 @@ def apply_effects(args):
     )
 
     logging.debug("Effects applied to frame")
-    cv2.imshow("contentfarm", frame)
     return frame_with_trollface
