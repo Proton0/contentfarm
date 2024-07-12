@@ -1,7 +1,6 @@
 import json
 import random
 import os
-import cv2
 import logging
 
 with open("config.json", "r") as f:

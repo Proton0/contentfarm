@@ -91,7 +91,9 @@ def glitch(frame):
                 )
 
             # Motion blur
-            size = random.randint(1, 5)
+            size = random.randint(
+                config["motion_blur_size_min"], config["motion_blur_size_max"]
+            )
             kernel_motion_blur = np.zeros((size, size))
             kernel_motion_blur[int((size - 1) / 2), :] = np.ones(size)
             kernel_motion_blur = kernel_motion_blur / size
