@@ -172,7 +172,6 @@ if __name__ == "__main__":
         out.write(frame)
 
     logging.debug("Freeze frames written to output video")
-
     cap.release()
     out.release()
     cv2.destroyAllWindows()

