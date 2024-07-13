@@ -113,7 +113,8 @@ def check_if_opencv_compatible(c):
         if os.path.isfile("../../_opencv_version"):
             with open("../../_opencv_version", "r") as f:
                 opencv_version = f.read()
-                if int(opencv_version) >= 5:
+
+                if int(opencv_version) >= 10:
                     return False # Too new
                 else:
                     with open("../../_opencv_version", "w") as z:

@@ -2,8 +2,9 @@
 # Sigma Trollface Content Farm Maker
 A simple python script which makes a super sigma trollface edit that you can use to content farm
 
-## Changelogs (v1.4 -> v1.5)
-- Added customizability for the logging
+## Changelogs (v1.5-> 1.6)
+- Fixed bug (code was repeated for some reason)
+- Added Configurator UI
 
 **If you are going to use this tool for contentfarming. Dont (its bad)**
 

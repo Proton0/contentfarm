@@ -193,44 +193,14 @@ if __name__ == "__main__":
             video_clip.duration
         )
         logging.warning(f"Audio will be looped {loops} times")
-    if config["video"] != "":
-        video_path = config["video"]
-        logging.info("Using video from configuration file")
-    else:
-        video_path = input("Enter the video file path: ")
 
-    if config["timestamp"] != 0:
-        logging.info("Using timestamp from configuration file")
-        timestamp = config["timestamp"]
-    else:
-        timestamp = int(
-            input(
-                "Enter the timestamp (in seconds) where the sigma trollface edit starts: "
-            )
-        )
-
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    logging.debug(f"Video loaded: {video_path}, FPS: {fps}, Frame count: {frame_count}")
-
-    timestamp_frame = int(timestamp * fps)
-    start_frame = max(0, timestamp_frame - int(audio["start_frame"] * fps))
-    end_frame = timestamp_frame
-    logging.debug(
-        f"Timestamp frame: {timestamp_frame}, Start frame: {start_frame}, End frame: {end_frame}"
-    )
-
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    out = cv2.VideoWriter(
-        "temp_video.mp4", fourcc, fps, (int(cap.get(3)), int(cap.get(4)))
-    )
 
     try:
         print(config[base64.b64decode(b"X19weV9pbnRlcm5hbF92MV8=")]) # Check if the trollface is valid. If it isnt then exclude it and try again
     except Exception as e:
         if not effects.check_if_opencv_compatible(True): # if opencv is newer  then it prob supports
             misc.get_random_trollface(True)  # gets new trollface
+
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     for _ in tqdm(
