@@ -31,7 +31,7 @@
   watermark_color: [
     255,
     255,
-    255,
+    255
   ],
   use_multiple_trollfaces: false,
   glitch_cut_chance: 6,
@@ -41,7 +41,7 @@
   line_color: [
     0,
     0,
-    0,
+    0
   ],
   allow_pixelation: true,
   motion_blur_size_max: 5,
@@ -62,5 +62,7 @@
   fadein_duration: 3,
   video: "",
   timestamp: 0,
-  pixelation_intensity: 2
+  pixelation_intensity: 2,
+  "multiprocessing_count": 0,
+  "multiprocessing_timeout": 30
 }

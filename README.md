@@ -1,10 +1,14 @@
 
 # Sigma Trollface Content Farm Maker
+
+This is the **last update for contentfarm**. I will not be updating this anymore. If you want to continue this project, feel free to fork it.
+
 A simple python script which makes a super sigma trollface edit that you can use to content farm
 
-## Changelogs (v1.5-> 1.6)
-- Fixed bug (code was repeated for some reason)
-- Added Configurator UI
+## Changelogs (v1.6 -> 1.7)
+- Improved multiprocessing
+- Added trollfaces
+
 
 **If you are going to use this tool for contentfarming. Dont (its bad)**
 
@@ -28,7 +32,13 @@ Install dependencies
   pip3 install -r requirements.txt
 ```
 
-Run the script
+Configure the `config.jsonc` file
+
+```bash
+    python3 configurator.py
+```
+
+Run the script (thru the configurator or manually)
 
 ```bash
     python3 main.py

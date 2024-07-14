@@ -1,14 +1,14 @@
-import base64
 import random
 import cv2
 import numpy as np
 import os
+from multiprocessing import cpu_count
 import logging
+import time
 from tqdm import tqdm
 from moviepy.video.fx import fadein
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_audioclips
-import multiprocessing
-import sys
+import concurrent.futures
 import json5 as json
 import effects
 import misc
@@ -41,36 +41,54 @@ else:
 
 trollface = misc.get_random_trollface()
 freezeframe = None
-try:
-    print(config[base64.b64decode(b"X19weV9pbnRlcm5hbF92MV8=")]) # Check if trollface is valid. If it isnt then exclude it and try again
-except Exception as e:
-    if not effects.check_if_opencv_compatible(True):
-        misc.get_random_trollface(True)  # Excludes current trollface and warns user
+
 
 def process_frame(args):
-    frame, intensity, trollface = args
-    return effects.apply_effects((frame, intensity, trollface))
+    try:
+        frame, intensity, trollface = args
+        i = time.perf_counter()
+        logging.debug("Calling apply_effects")
+        r = effects.apply_effects((frame, intensity, trollface))
+        logging.debug(f"Frame processed in {time.perf_counter() - i:.2f} seconds")
+        logging.debug("Effects processed")
+        return r
+    except Exception as e:
+        logging.error(f"Failed to process the frame due to {e}")
+        return None
+
 
 
 def process_frames(frames, intensity):
     global trollface
-
+    processed_frames = []
     logging.debug("Starting frame processing")
 
     try:
         if config["use_multiprocessing"]:
-            with multiprocessing.Pool() as pool:
-                processed_frames = list(
-                    tqdm(
-                        pool.imap_unordered(
-                            process_frame,
-                            [(frame, intensity, trollface) for frame in frames],
-                        ),
-                        total=len(frames),
-                        desc="Applying effects",
-                        leave=False,
-                    )
+            timeout_seconds = config.get("multiprocessing_timeout", 30)
+            if config["multiprocessing_count"] == 0:
+                config["multiprocessing_count"] = cpu_count()
+                logging.debug(
+                    f"Using {config['multiprocessing_count']} processes for multiprocessing"
                 )
+            with concurrent.futures.ProcessPoolExecutor(max_workers=config["multiprocessing_count"]) as executor:
+                future_to_frame = {executor.submit(process_frame, (frame, intensity, trollface)): frame for frame in frames}
+                start_time = time.time()
+                for future in concurrent.futures.as_completed(future_to_frame):
+                    if time.time() - start_time >= timeout_seconds:
+                        logging.error("Multiprocessing timeout. Try to decrease batch size or increase timeout")
+                        executor.shutdown(wait=False)  # Terminate the worker processes immediately
+                        return
+                    try:
+                        result = future.result(timeout=1)
+                        processed_frames.append(result) # put result in processed frames
+                    except concurrent.futures.TimeoutError:
+                        logging.error("Multiprocessing timeout. Try to decrease batch size or increase timeout")
+                        executor.shutdown(wait=False)  # Terminate the worker processes immediately
+                        return
+                    except Exception as e:
+                        logging.error(f"Error processing frame: {e}")
+
         else:
             logging.warning(
                 "Multiprocessing is disabled. Video processing will be VERY VERY slow."
@@ -83,11 +101,9 @@ def process_frames(frames, intensity):
         logging.debug("Frame processing complete")
         return processed_frames
 
-    finally:
-        if config["use_multiprocessing"]:
-            pool.join()
-            pool.terminate()
-
+    except Exception as e:
+        logging.error(f"Failed to process frames due to {e}")
+        exit(1)
 
 if __name__ == "__main__":
 
@@ -126,7 +142,7 @@ if __name__ == "__main__":
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     for _ in tqdm(
-        range(start_frame, end_frame), desc="Processing video frames", unit="frames"
+            range(start_frame, end_frame), desc="Processing video frames", unit="frames"
     ):
         ret, frame = cap.read()
         if not ret:
@@ -193,84 +209,6 @@ if __name__ == "__main__":
         )
         logging.warning(f"Audio will be looped {loops} times")
 
-
-    try:
-        print(config[base64.b64decode(b"X19weV9pbnRlcm5hbF92MV8=")]) # Check if the trollface is valid. If it isnt then exclude it and try again
-    except Exception as e:
-        if not effects.check_if_opencv_compatible(True): # if opencv is newer  then it prob supports
-            misc.get_random_trollface(True)  # gets new trollface
-
-
-    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-    for _ in tqdm(
-        range(start_frame, end_frame), desc="Processing video frames", unit="frames"
-    ):
-        ret, frame = cap.read()
-        if not ret:
-            logging.error("Failed to read frame")
-            break
-        out.write(frame)
-    logging.debug("Initial video frames processed")
-
-    freeze_frame_duration = audio["freeze_frame_duration"]
-    freeze_frame_count = int(freeze_frame_duration * fps)
-
-    freeze_frames = []
-
-    batch_size = config["batch_size"]
-    frames_batch = []
-
-    cap.set(cv2.CAP_PROP_POS_FRAMES, end_frame)
-
-    for _ in tqdm(range(freeze_frame_count), desc="Generating freeze-frame"):
-        if config["freeze_video"] and freezeframe is not None:
-            logging.debug("using timestamp frame due to freeze_video in config.jsonc")
-            frame = freezeframe
-        else:
-            ret, frame = cap.read()
-            if not ret:
-                logging.error("Failed to read frame")
-                break
-            freezeframe = frame
-        frames_batch.append(frame)
-
-        if len(frames_batch) >= batch_size:
-            logging.debug(f"Processing batch of {batch_size} frames")
-            freeze_frames.extend(
-                process_frames(frames_batch, config["noise_intensity"])
-            )
-            frames_batch = []
-
-    if frames_batch:
-        logging.debug(f"Processing remaining batch of {len(frames_batch)} frames")
-        freeze_frames.extend(process_frames(frames_batch, config["noise_intensity"]))
-
-    for frame in tqdm(freeze_frames, desc="Writing freeze-frame"):
-        out.write(frame)
-
-    logging.debug("Freeze frames written to output video")
-
-    cap.release()
-    out.release()
-    cv2.destroyAllWindows()
-    logging.debug("Resources released")
-
-    video_clip = VideoFileClip("temp_video.mp4")
-    if config["mute_original_audio"]:
-        video_clip = video_clip.without_audio()
-
-    logging.debug("Applying fade in")
-    video_clip = video_clip.fx(fadein.fadein, config["fadein_duration"])
-
-    audio_clip = AudioFileClip(audio["audio_file"])
-
-    if audio_clip.duration < video_clip.duration:
-        loops = int(np.ceil(video_clip.duration / audio_clip.duration))
-        audio_clip = concatenate_audioclips([audio_clip] * loops).set_duration(
-            video_clip.duration
-        )
-        logging.warning(f"Audio will be looped {loops} times")
-
     final_clip = video_clip.set_audio(audio_clip)
     final_clip.write_videofile(
         config["output_file"],
@@ -280,19 +218,3 @@ if __name__ == "__main__":
     )
 
     os.remove("temp_video.mp4")
-
-    logging.debug("Video generation complete")
-    print("Generated")
-
-    final_clip = video_clip.set_audio(audio_clip)
-    final_clip.write_videofile(
-        config["output_file"],
-        codec=config["codec"],
-        audio_codec=config["audio_codec"],
-        threads=config["threads"],
-    )
-
-    os.remove("temp_video.mp4")
-
-    logging.debug("Video generation complete")
-    print("Generated")

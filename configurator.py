@@ -7,18 +7,21 @@ import subprocess
 import threading
 import queue
 
+
 class ConfigEditor:
 
     def __init__(self, root):
         self.root = root
         self.root.title("Config Editor")
         self.root.geometry("800x600")  # Set the initial size of the window
-        self.root.configure(bg='#2e2e2e')
+        self.root.configure(bg="#2e2e2e")
         self.root.grid_rowconfigure(2, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
 
         self.config_data = {}
         self.explanations = {
+            "video": "Video (will not ask the user for a video if this is set)",
+            "timestamp": "When will the edit happen",
             "debug_level": "Debug levels (10 - Debug, 20 - Info, 30 - Warning, 40 - Error, 50 - Critical)",
             "noise_intensity": "Noise Intensity",
             "mute_original_audio": "Will the audio be muted?",
@@ -72,53 +75,73 @@ class ConfigEditor:
             "audio_codec": "Audio codec (recommended to not change)",
             "codec": "Video codec (recommended to not change)",
             "fadein_duration": "Fade-in duration",
-            "video": "Video (will not ask the user for a video if this is set)",
-            "timestamp": "Same as video but for duration",
-            "pixelation_intensity": "Pixelation intensity"
+            "pixelation_intensity": "Pixelation intensity",
+            "multiprocessing_count": "How many cores will be used (if 0 then all cores will be used)",
+            "multiprocessing_timeout": "Timeout for multiprocessing (in seconds)",
         }
 
         self.create_widgets()
 
     def create_widgets(self):
-        title_frame = tk.Frame(self.root, bg='#2e2e2e')
-        title_frame.grid(row=0, column=0, columnspan=3, sticky='w')
+        title_frame = tk.Frame(self.root, bg="#2e2e2e")
+        title_frame.grid(row=0, column=0, columnspan=3, sticky="w")
 
-        self.title_label = tk.Label(title_frame, text="Contentfarm Configurator", font=("Helvetica", 14), fg="white", bg='#2e2e2e')
-        self.title_label.grid(row=0, column=0, padx=10, pady=5, sticky='w')
+        self.title_label = tk.Label(
+            title_frame,
+            text="Contentfarm Configurator",
+            font=("Helvetica", 14),
+            fg="white",
+            bg="#2e2e2e",
+        )
+        self.title_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
 
-        self.author_label = tk.Label(title_frame, text="Made by vproton0", font=("Helvetica", 10), fg="white", bg='#2e2e2e')
-        self.author_label.grid(row=1, column=0, padx=10, pady=0, sticky='w')
+        self.author_label = tk.Label(
+            title_frame,
+            text="Made by vproton0",
+            font=("Helvetica", 10),
+            fg="white",
+            bg="#2e2e2e",
+        )
+        self.author_label.grid(row=1, column=0, padx=10, pady=0, sticky="w")
 
-        button_frame = tk.Frame(self.root, bg='#2e2e2e')
-        button_frame.grid(row=1, column=0, columnspan=3, sticky='ew', padx=10)
+        button_frame = tk.Frame(self.root, bg="#2e2e2e")
+        button_frame.grid(row=1, column=0, columnspan=3, sticky="ew", padx=10)
 
-        self.load_button = tk.Button(button_frame, text="Load Config", command=self.load_config)
-        self.load_button.pack(side='left', padx=5, pady=10)
+        self.load_button = tk.Button(
+            button_frame, text="Load Config", command=self.load_config
+        )
+        self.load_button.pack(side="left", padx=5, pady=10)
 
-        self.save_button = tk.Button(button_frame, text="Save Config", command=self.save_config)
-        self.save_button.pack(side='left', padx=5, pady=10)
+        self.save_button = tk.Button(
+            button_frame, text="Save Config", command=self.save_config
+        )
+        self.save_button.pack(side="left", padx=5, pady=10)
 
         self.run_button = tk.Button(button_frame, text="Run", command=self.run_script)
-        self.run_button.pack(side='left', padx=5, pady=10)
+        self.run_button.pack(side="left", padx=5, pady=10)
 
-        self.update_button = tk.Button(button_frame, text="Update", command=self.update_repo)
-        self.update_button.pack(side='left', padx=5, pady=10)
+        self.update_button = tk.Button(
+            button_frame, text="Update", command=self.update_repo
+        )
+        self.update_button.pack(side="left", padx=5, pady=10)
 
         # Scrollable frame for configuration entries
-        self.entries_frame_container = tk.Frame(self.root, bg='#2e2e2e')
-        self.entries_frame_container.grid(row=2, column=0, columnspan=3, sticky='nsew', padx=10, pady=10)
+        self.entries_frame_container = tk.Frame(self.root, bg="#2e2e2e")
+        self.entries_frame_container.grid(
+            row=2, column=0, columnspan=3, sticky="nsew", padx=10, pady=10
+        )
         self.entries_frame_container.grid_rowconfigure(0, weight=1)
         self.entries_frame_container.grid_columnconfigure(0, weight=1)
 
-        self.canvas = tk.Canvas(self.entries_frame_container, bg='#2e2e2e')
-        self.scrollbar = ttk.Scrollbar(self.entries_frame_container, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas, bg='#2e2e2e')
+        self.canvas = tk.Canvas(self.entries_frame_container, bg="#2e2e2e")
+        self.scrollbar = ttk.Scrollbar(
+            self.entries_frame_container, orient="vertical", command=self.canvas.yview
+        )
+        self.scrollable_frame = tk.Frame(self.canvas, bg="#2e2e2e")
 
         self.scrollable_frame.bind(
             "<Configure>",
-            lambda e: self.canvas.configure(
-                scrollregion=self.canvas.bbox("all")
-            )
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
         )
 
         self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
@@ -129,9 +152,12 @@ class ConfigEditor:
 
         # Text widget for output display
         # Text widget for output display
-        self.output_text = tk.Text(self.root, height=30, width=100, fg="white",
-                                   bg='#2e2e2e')  # Increase the height and width
-        self.output_text.grid(row=3, column=0, columnspan=3, sticky='nsew', padx=10, pady=10)
+        self.output_text = tk.Text(
+            self.root, height=30, width=100, fg="white", bg="#2e2e2e"
+        )  # Increase the height and width
+        self.output_text.grid(
+            row=3, column=0, columnspan=3, sticky="nsew", padx=10, pady=10
+        )
 
         # Configure the row that contains the Text widget to expand
         self.root.grid_rowconfigure(3, weight=1)
@@ -141,18 +167,22 @@ class ConfigEditor:
         self.output_text.insert(tk.END, "Press the run button to see the output.\n")
 
         # Disable typing in the output screen
-        self.output_text.config(state='disabled')
+        self.output_text.config(state="disabled")
 
         # Scrollbar for output text widget
-        self.output_scrollbar = ttk.Scrollbar(self.output_text, orient="vertical", command=self.output_text.yview)
+        self.output_scrollbar = ttk.Scrollbar(
+            self.output_text, orient="vertical", command=self.output_text.yview
+        )
         self.output_text.configure(yscrollcommand=self.output_scrollbar.set)
         self.output_scrollbar.pack(side="right", fill="y")
 
     def load_config(self):
-        file_path = filedialog.askopenfilename(defaultextension=".jsonc",
-                                               filetypes=[("Contentfarm Configuration", "*.jsonc")])
+        file_path = filedialog.askopenfilename(
+            defaultextension=".jsonc",
+            filetypes=[("Contentfarm Configuration", "*.jsonc")],
+        )
         if file_path:
-            with open(file_path, 'r') as file:
+            with open(file_path, "r") as file:
                 self.config_data = json5.load(file)
             self.display_config()
 
@@ -162,18 +192,25 @@ class ConfigEditor:
 
         row = 0
         for key, value in self.config_data.items():
-            explanation = self.explanations.get(key,
-                                                "Unknown config. Check for configurator updates in the GitHub Repo")
+            explanation = self.explanations.get(key, "Unknown config!")
 
-            tk.Label(self.scrollable_frame, text=explanation, font=("Helvetica", 10), fg="white", bg='#2e2e2e').grid(
-                row=row, column=0, sticky='w', pady=2)
+            tk.Label(
+                self.scrollable_frame,
+                text=explanation,
+                font=("Helvetica", 10),
+                fg="white",
+                bg="#2e2e2e",
+            ).grid(row=row, column=0, sticky="w", pady=2)
 
             if isinstance(value, bool):
                 # Create a Combobox for boolean values
                 combobox = ttk.Combobox(self.scrollable_frame, values=[True, False])
                 combobox.set(value)
                 combobox.grid(row=row, column=1, pady=2)
-                combobox.bind("<<ComboboxSelected>>", lambda e, k=key: self.update_config_data(k, e))
+                combobox.bind(
+                    "<<ComboboxSelected>>",
+                    lambda e, k=key: self.update_config_data(k, e),
+                )
             else:
                 entry = tk.Entry(self.scrollable_frame, fg="white", bg="#2e2e2e")
                 entry.grid(row=row, column=1, pady=2)
@@ -196,15 +233,17 @@ class ConfigEditor:
                 self.config_data[key] = value
 
     def save_config(self):
-        file_path = filedialog.asksaveasfilename(defaultextension=".jsonc",
-                                                 filetypes=[("Contentfarm Configuration", "*.jsonc")])
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".jsonc",
+            filetypes=[("Contentfarm Configuration", "*.jsonc")],
+        )
         if file_path:
-            with open(file_path, 'w') as file:
+            with open(file_path, "w") as file:
                 json5.dump(self.config_data, file, indent=2, quote_keys=True)
 
     def run_script(self):
         # Enable typing in the output screen
-        self.output_text.config(state='normal')
+        self.output_text.config(state="normal")
 
         self.output_text.delete(1.0, tk.END)
         self.process_queue = queue.Queue()
@@ -218,14 +257,15 @@ class ConfigEditor:
                 cwd=os.getcwd(),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
             )
+            self.process_queue.put("[configurator] Running main.py")
             for line in iter(process.stdout.readline, ""):
-                self.process_queue.put(line)
+                self.process_queue.put("[contentfarm] " + line)
             for line in iter(process.stderr.readline, ""):
-                self.process_queue.put(line)
+                self.process_queue.put("[contentfarm]" + line)
         except Exception as e:
-            self.process_queue.put(f"Failed to run main.py:\n{e}")
+            self.process_queue.put(f"[configurator] Failed to run main.py:\n{e}")
 
     def check_output_queue(self):
         while not self.process_queue.empty():
@@ -236,10 +276,16 @@ class ConfigEditor:
 
     def update_repo(self):
         try:
+            self.process_queue.put("[configurator] Running git pull")
             subprocess.run(["git", "pull"], cwd=os.getcwd(), check=True)
-            messagebox.showinfo("Success", "Repository updated successfully.")
+            messagebox.showinfo("Success", "Updated successfully.")
+            self.process_queue.put("[configurator] Updated successfully")
         except Exception as e:
+            self.process_queue.put(
+                f"[configurator] Failed to update repository (reason: {e})"
+            )
             messagebox.showerror("Error", f"Failed to update repository:\n{e}")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
