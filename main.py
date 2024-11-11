@@ -57,7 +57,6 @@ def process_frame(args):
         return None
 
 
-
 def process_frames(frames, intensity):
     global trollface
     processed_frames = []
@@ -71,20 +70,35 @@ def process_frames(frames, intensity):
                 logging.debug(
                     f"Using {config['multiprocessing_count']} processes for multiprocessing"
                 )
-            with concurrent.futures.ProcessPoolExecutor(max_workers=config["multiprocessing_count"]) as executor:
-                future_to_frame = {executor.submit(process_frame, (frame, intensity, trollface)): frame for frame in frames}
+            with concurrent.futures.ProcessPoolExecutor(
+                max_workers=config["multiprocessing_count"]
+            ) as executor:
+                future_to_frame = {
+                    executor.submit(process_frame, (frame, intensity, trollface)): frame
+                    for frame in frames
+                }
                 start_time = time.time()
                 for future in concurrent.futures.as_completed(future_to_frame):
                     if time.time() - start_time >= timeout_seconds:
-                        logging.error("Multiprocessing timeout. Try to decrease batch size or increase timeout")
-                        executor.shutdown(wait=False)  # Terminate the worker processes immediately
+                        logging.error(
+                            "Multiprocessing timeout. Try to decrease batch size or increase timeout"
+                        )
+                        executor.shutdown(
+                            wait=False
+                        )  # Terminate the worker processes immediately
                         return
                     try:
                         result = future.result(timeout=1)
-                        processed_frames.append(result) # put result in processed frames
+                        processed_frames.append(
+                            result
+                        )  # put result in processed frames
                     except concurrent.futures.TimeoutError:
-                        logging.error("Multiprocessing timeout. Try to decrease batch size or increase timeout")
-                        executor.shutdown(wait=False)  # Terminate the worker processes immediately
+                        logging.error(
+                            "Multiprocessing timeout. Try to decrease batch size or increase timeout"
+                        )
+                        executor.shutdown(
+                            wait=False
+                        )  # Terminate the worker processes immediately
                         return
                     except Exception as e:
                         logging.error(f"Error processing frame: {e}")
@@ -104,6 +118,7 @@ def process_frames(frames, intensity):
     except Exception as e:
         logging.error(f"Failed to process frames due to {e}")
         exit(1)
+
 
 if __name__ == "__main__":
 
@@ -142,7 +157,7 @@ if __name__ == "__main__":
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     for _ in tqdm(
-            range(start_frame, end_frame), desc="Processing video frames", unit="frames"
+        range(start_frame, end_frame), desc="Processing video frames", unit="frames"
     ):
         ret, frame = cap.read()
         if not ret:

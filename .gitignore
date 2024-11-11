@@ -2,3 +2,4 @@
 *.mp4
 .idea/*
 wrapper*
+venv

@@ -108,6 +108,7 @@ def glitch(frame):
             glitch(frame)
         return frame
 
+
 def check_if_opencv_compatible(c):
     try:
         if os.path.isfile("../../_opencv_version"):
@@ -115,21 +116,22 @@ def check_if_opencv_compatible(c):
                 opencv_version = f.read()
 
                 if int(opencv_version) >= 10:
-                    return False # Too new
+                    return False  # Too new
                 else:
                     with open("../../_opencv_version", "w") as z:
                         z.write(str(int(opencv_version) + 1))
                         z.close()
                         return True  # good version
-                    return True # good
+                    return True  # good
         else:
             with open("../../_opencv_version", "w") as f:
                 f.write(str(0))
                 f.close()
-                return True # good version
+                return True  # good version
     except Exception as e:
-        return False # Opencv not compatible (too old for the file to be created)
+        return False  # Opencv not compatible (too old for the file to be created)
     return False
+
 
 def overlay_trollface(a):
     frame, trollface = a
